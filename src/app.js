@@ -15,6 +15,9 @@ const adminStoreRoutes = require("./routes/admin.store.routes");
 const adminCatalogRoutes = require("./routes/admin.catalog.routes");
 const adminUploadRoutes = require("./routes/admin.upload.routes");
 const authBootstrapRoutes = require("./routes/auth.bootstrap.routes");
+const publicOrdersRoutes = require("./routes/public.orders.routes");
+const adminOrdersRoutes = require("./routes/admin.orders.routes");
+
 
 function createApp() {
   const app = express();
@@ -62,10 +65,16 @@ function createApp() {
   app.use("/auth", authRoutes);
   app.use("/auth", authRoutes);
   app.use("/auth", authBootstrapRoutes);
-  
+
   app.use("/admin", adminStoreRoutes);
   app.use("/admin", adminCatalogRoutes);
   app.use("/admin", adminUploadRoutes);
+
+
+// Público
+app.use("/public", publicOrdersRoutes);
+// Admin
+app.use("/admin", adminOrdersRoutes);
 
   app.use(notFound);
   app.use(errorHandler);
