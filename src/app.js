@@ -14,6 +14,7 @@ const authRoutes = require("./routes/auth.routes");
 const adminStoreRoutes = require("./routes/admin.store.routes");
 const adminCatalogRoutes = require("./routes/admin.catalog.routes");
 const adminUploadRoutes = require("./routes/admin.upload.routes");
+const authBootstrapRoutes = require("./routes/auth.bootstrap.routes");
 
 function createApp() {
   const app = express();
@@ -59,6 +60,9 @@ function createApp() {
   app.use("/public", publicCatalogRoutes);
 
   app.use("/auth", authRoutes);
+  app.use("/auth", authRoutes);
+  app.use("/auth", authBootstrapRoutes);
+  
   app.use("/admin", adminStoreRoutes);
   app.use("/admin", adminCatalogRoutes);
   app.use("/admin", adminUploadRoutes);

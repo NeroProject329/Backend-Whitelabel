@@ -18,7 +18,14 @@ const env = {
   CORS_ORIGIN: process.env.CORS_ORIGIN || "*",
 
   RATE_LIMIT_WINDOW_MS: Number(process.env.RATE_LIMIT_WINDOW_MS || 60_000),
-  RATE_LIMIT_MAX: Number(process.env.RATE_LIMIT_MAX || 300)
+  RATE_LIMIT_MAX: Number(process.env.RATE_LIMIT_MAX || 300),
+
+  // src/config/env.js (adicione dentro do objeto env)
+  BOOTSTRAP_ENABLED: ["true", "1", "yes"].includes(String(process.env.BOOTSTRAP_ENABLED || "").toLowerCase()),
+  BOOTSTRAP_TOKEN: process.env.BOOTSTRAP_TOKEN || "",
+  
 };
+
+
 
 module.exports = { env };
