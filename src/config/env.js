@@ -23,6 +23,11 @@ const env = {
   // src/config/env.js (adicione dentro do objeto env)
   BOOTSTRAP_ENABLED: ["true", "1", "yes"].includes(String(process.env.BOOTSTRAP_ENABLED || "").toLowerCase()),
   BOOTSTRAP_TOKEN: process.env.BOOTSTRAP_TOKEN || "",
+
+  SMS_PROVIDER: process.env.SMS_PROVIDER || "CUSTOM_CAMPAIGN",
+  SMS_API_URL: process.env.SMS_API_URL || "",
+  SMS_API_TOKEN: process.env.SMS_API_TOKEN || "",
+  SMS_CAMPAIGN_NAME: process.env.SMS_CAMPAIGN_NAME || "Campanha Checkout",
   
 };
 

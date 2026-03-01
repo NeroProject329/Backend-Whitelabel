@@ -1,6 +1,6 @@
 // src/routes/public.orders.routes.js
 const express = require("express");
-const { createDraft, getOrder } = require("../controllers/publicOrders.controller");
+const { createDraft, getOrder, advanceCheckout } = require("../controllers/publicOrders.controller");
 const { resolveStore } = require("../middlewares/resolveStore");
 
 const router = express.Router();
@@ -13,5 +13,6 @@ function resolveStoreIfNeeded(req, res, next) {
 
 router.post("/orders", resolveStoreIfNeeded, createDraft);
 router.get("/orders/:id", getOrder);
+router.post("/orders/:id/advance", resolveStoreIfNeeded, advanceCheckout);
 
 module.exports = router;
