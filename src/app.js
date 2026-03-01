@@ -8,9 +8,16 @@ const cookieParser = require("cookie-parser");
 const { env } = require("./config/env");
 const { rateLimitMiddleware } = require("./middlewares/rateLimit");
 const { notFound, errorHandler } = require("./middlewares/error");
+const publicStoreRoutes = require("./routes/public.store.routes");
+const publicCatalogRoutes = require("./routes/public.catalog.routes");
+const authRoutes = require("./routes/auth.routes");
+const adminStoreRoutes = require("./routes/admin.store.routes");
+const adminCatalogRoutes = require("./routes/admin.catalog.routes");
+const adminUploadRoutes = require("./routes/admin.upload.routes");
 
 function createApp() {
   const app = express();
+  app.set("trust proxy", 1);
 
   // Segurança + base
   app.use(helmet());
@@ -48,6 +55,14 @@ function createApp() {
   // app.use("/webhooks", ...)
 
   // 404 + handler
+  app.use("/public/store", publicStoreRoutes);
+  app.use("/public", publicCatalogRoutes);
+
+  app.use("/auth", authRoutes);
+  app.use("/admin", adminStoreRoutes);
+  app.use("/admin", adminCatalogRoutes);
+  app.use("/admin", adminUploadRoutes);
+
   app.use(notFound);
   app.use(errorHandler);
 
