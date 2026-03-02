@@ -1,6 +1,6 @@
 // src/routes/public.orders.routes.js
 const express = require("express");
-const { createDraft, getOrder, advanceCheckout } = require("../controllers/publicOrders.controller");
+const { createDraft, getOrder, advanceCheckout, getOrderPayment } = require("../controllers/publicOrders.controller");
 const { resolveStore } = require("../middlewares/resolveStore");
 
 

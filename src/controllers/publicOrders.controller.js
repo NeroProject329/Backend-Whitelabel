@@ -223,7 +223,7 @@ async function advanceCheckout(req, res, next) {
       const apiKey = decryptSecret(pixgoCfg.apiKeyEnc);
       const baseUrl = pixgoCfg.baseUrl || "https://pixgo.org/api/v1";
 
-      // monta endereço em string (doc aceita string) :contentReference[oaicite:8]{index=8}
+
       const addressStr = `${order.address.street}, ${order.address.number}, ${order.address.district}, ${order.address.city}, ${order.address.uf}, ${order.address.zip}` +
         (order.address.complement ? `, ${order.address.complement}` : "");
 
