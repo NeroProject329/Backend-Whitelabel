@@ -32,15 +32,19 @@ function createApp() {
   app.use(helmet());
 
   // ---------- CORS allowlist ----------
-  const allowedOrigins = Array.isArray(env.CORS_ORIGINS) ? env.CORS_ORIGINS : [];
+   const allowedOrigins = Array.isArray(env.CORS_ORIGINS) ? env.CORS_ORIGINS : [];
 
   const corsOptions = {
     origin: function (origin, cb) {
-      // requests server-to-server / curl sem Origin
+      // curl/server-to-server sem Origin
       if (!origin) return cb(null, true);
+
+      // se ainda não configurou allowlist, libera tudo (útil em dev)
+      if (allowedOrigins.length === 0) return cb(null, true);
 
       if (allowedOrigins.includes(origin)) return cb(null, true);
 
+      // rejeita
       return cb(new Error("CORS_NOT_ALLOWED"));
     },
     credentials: true,
