@@ -15,6 +15,9 @@ function resolveStoreIfNeeded(req, res, next) {
 router.post("/orders", resolveStoreIfNeeded, createDraft);
 router.get("/orders/:id", getOrder);
 router.post("/orders/:id/advance", resolveStoreIfNeeded, advanceCheckout);
+
+
+// ✅ rota de status do pagamento
 router.get("/orders/:id/payment", getOrderPayment);
 
 module.exports = router;
