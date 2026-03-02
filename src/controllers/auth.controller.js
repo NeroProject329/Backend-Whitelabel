@@ -5,17 +5,23 @@ const AdminUser = require("../models/AdminUser");
 const Store = require("../models/Store");
 const { ApiError } = require("../middlewares/error");
 
-function cookieOptions() {
+function cookieOptions(req) {
   const isProd = process.env.NODE_ENV === "production";
+
+  // Se o painel estiver em http://localhost, NÃO use secure + samesite none
+  const origin = req.headers.origin || "";
+  const isLocalhost =
+    origin.startsWith("http://localhost") ||
+    origin.startsWith("http://127.0.0.1");
+
   return {
     httpOnly: true,
-    secure: isProd, // produção precisa HTTPS
-    sameSite: isProd ? "none" : "lax",
+    secure: isProd && !isLocalhost,      // ✅ localhost: false | produção: true
+    sameSite: isProd && !isLocalhost ? "none" : "lax", // ✅ localhost: lax | produção: none
     path: "/",
     maxAge: 7 * 24 * 60 * 60 * 1000
   };
 }
-
 function signToken(user) {
   return jwt.sign(
     {
@@ -44,7 +50,7 @@ async function login(req, res, next) {
     const token = signToken(user);
 
     const cookieName = process.env.COOKIE_NAME || "wl_token";
-    res.cookie(cookieName, token, cookieOptions());
+    res.cookie(cookieName, token, cookieOptions(req));
 
     // retornar stores básicas ajuda o painel
     const stores = user.role === "SUPER_ADMIN"
