@@ -1,15 +1,22 @@
 // src/routes/admin.store.routes.js
 const express = require("express");
-const { requireAuth, requireRole } = require("../middlewares/auth");
-const { createStore, listStores, updateStore } = require("../controllers/adminStores.controller");
+const { requireAuth, requireRole, requireStoreAccess } = require("../middlewares/auth");
+const ctrl = require("../controllers/adminStores.controller");
 
 const router = express.Router();
 
 router.use(requireAuth);
-router.use(requireRole("SUPER_ADMIN"));
 
-router.post("/stores", createStore);
-router.get("/stores", listStores);
-router.patch("/stores/:id", updateStore);
+// SUPER_ADMIN only
+router.post("/stores", requireRole("SUPER_ADMIN"), ctrl.createStore);
+
+// SUPER_ADMIN: todas | STORE_ADMIN: somente as suas
+router.get("/stores", ctrl.listStores);
+
+// detalhes de uma loja (precisa acesso)
+router.get("/stores/:id", requireStoreAccess("id"), ctrl.getStore);
+
+// editar config (precisa acesso)
+router.patch("/stores/:id", requireStoreAccess("id"), ctrl.updateStore);
 
 module.exports = router;

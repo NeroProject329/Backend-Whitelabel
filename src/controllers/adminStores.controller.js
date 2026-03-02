@@ -49,8 +49,28 @@ async function createStore(req, res, next) {
 
 async function listStores(req, res, next) {
   try {
-    const stores = await Store.find({}).sort({ createdAt: -1 }).lean();
+    const role = req.user?.role;
+    const storeIds = (req.user?.storeIds || []).map(String);
+
+    const query =
+      role === "SUPER_ADMIN"
+        ? {}
+        : { _id: { $in: storeIds } };
+
+    const stores = await Store.find(query).sort({ createdAt: -1 }).lean();
     return res.json({ success: true, data: stores.map(toStoreDTO) });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function getStore(req, res, next) {
+  try {
+    const { id } = req.params;
+    const store = await Store.findById(id).lean();
+    if (!store) throw new ApiError(404, "STORE_NOT_FOUND", "Store not found");
+
+    return res.json({ success: true, data: toStoreDTO(store) });
   } catch (err) {
     next(err);
   }
@@ -72,6 +92,7 @@ async function updateStore(req, res, next) {
       "etaMax",
       "isActive"
     ];
+
     for (const k of allowed) {
       if (body[k] !== undefined) patch[k] = body[k];
     }
@@ -86,4 +107,4 @@ async function updateStore(req, res, next) {
   }
 }
 
-module.exports = { createStore, listStores, updateStore };
+module.exports = { createStore, listStores, getStore, updateStore };
