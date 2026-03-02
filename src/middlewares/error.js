@@ -22,6 +22,13 @@ function errorHandler(err, req, res, next) {
       success: false,
       error: { code: "INVALID_JSON", message: "Invalid JSON payload" }
     });
+  } 
+
+  if (err && err.message === "CORS_NOT_ALLOWED") {
+  return res.status(403).json({
+    success: false,
+    error: { code: "CORS_NOT_ALLOWED", message: "Origin not allowed" }
+     });
   }
 
   const payload = {

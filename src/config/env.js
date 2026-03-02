@@ -33,6 +33,12 @@ const env = {
   PIXGO_WEBHOOK_TOKEN: process.env.PIXGO_WEBHOOK_TOKEN || "",
   DATA_ENCRYPTION_KEY: process.env.DATA_ENCRYPTION_KEY || "",
   AUTO_CONFIRM_AFTER_PAYMENT: ["true", "1", "yes"].includes(String(process.env.AUTO_CONFIRM_AFTER_PAYMENT || "true").toLowerCase()),
+
+  // src/config/env.js (dentro do objeto env)
+CORS_ORIGINS: String(process.env.CORS_ORIGINS || "")
+  .split(",")
+  .map(s => s.trim())
+  .filter(Boolean),
   
 };
 
