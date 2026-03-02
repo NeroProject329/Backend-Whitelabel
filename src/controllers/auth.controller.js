@@ -6,22 +6,20 @@ const Store = require("../models/Store");
 const { ApiError } = require("../middlewares/error");
 
 function cookieOptions(req) {
-  const isProd = process.env.NODE_ENV === "production";
-
-  // Se o painel estiver em http://localhost, NÃO use secure + samesite none
-  const origin = req.headers.origin || "";
-  const isLocalhost =
-    origin.startsWith("http://localhost") ||
-    origin.startsWith("http://127.0.0.1");
+  // com trust proxy ligado, req.secure funciona no Railway
+  const isHttps =
+    req.secure === true ||
+    String(req.headers["x-forwarded-proto"] || "").toLowerCase() === "https";
 
   return {
     httpOnly: true,
-    secure: isProd && !isLocalhost,      // ✅ localhost: false | produção: true
-    sameSite: isProd && !isLocalhost ? "none" : "lax", // ✅ localhost: lax | produção: none
+    secure: isHttps,                 // ✅ Railway (https): true | local (http): false
+    sameSite: isHttps ? "none" : "lax", // ✅ Railway: none (cross-site) | local: lax (same-site)
     path: "/",
     maxAge: 7 * 24 * 60 * 60 * 1000
   };
 }
+
 function signToken(user) {
   return jwt.sign(
     {
@@ -117,7 +115,7 @@ async function me(req, res, next) {
 async function logout(req, res, next) {
   try {
     const cookieName = process.env.COOKIE_NAME || "wl_token";
-    res.clearCookie(cookieName, { path: "/" });
+    res.clearCookie(cookieName, { ...cookieOptions(req), maxAge: 0 });
     return res.json({ success: true, data: { ok: true } });
   } catch (err) {
     next(err);
