@@ -1,7 +1,7 @@
 // src/routes/admin.orders.routes.js
 const express = require("express");
 const { requireAuth, requireStoreAccess } = require("../middlewares/auth");
-const { listOrdersByStore, getOrderAdmin } = require("../controllers/adminOrders.controller");
+const { listOrdersByStore, getOrderAdmin, updateOrderStatus } = require("../controllers/adminOrders.controller");
 
 const router = express.Router();
 
@@ -12,5 +12,8 @@ router.get("/stores/:storeId/orders", requireStoreAccess("storeId"), listOrdersB
 
 // detalhe (checa acesso pela store do pedido no controller)
 router.get("/orders/:id", getOrderAdmin);
+
+// ✅ ações de status
+router.patch("/orders/:id/status", updateOrderStatus);
 
 module.exports = router;

@@ -1,13 +1,13 @@
 // src/controllers/adminIntegrations.controller.js
 const Store = require("../models/Store");
 const { ApiError } = require("../middlewares/error");
-const { encryptSecret, maskSecret } = require("../utils/crypto");
+const { encryptSecret } = require("../utils/crypto");
 
 async function getPixgoConfig(req, res, next) {
   try {
     const { storeId } = req.params;
 
-    const store = await Store.findById(storeId).select({ "integrations.pixgo": 1, name: 1 }).lean();
+    const store = await Store.findById(storeId).select({ "integrations.pixgo": 1 }).lean();
     if (!store) throw new ApiError(404, "STORE_NOT_FOUND", "Store not found");
 
     const pixgo = store.integrations?.pixgo || {};
@@ -18,7 +18,6 @@ async function getPixgoConfig(req, res, next) {
         isEnabled: !!pixgo.isEnabled,
         baseUrl: pixgo.baseUrl || "https://pixgo.org/api/v1",
         hasApiKey: !!pixgo.apiKeyEnc,
-        apiKeyMask: pixgo.apiKeyEnc ? maskSecret("************" + "1234") : null, // não expõe nada real
         apiKeyUpdatedAt: pixgo.apiKeyUpdatedAt || null
       }
     });
@@ -41,6 +40,7 @@ async function updatePixgoConfig(req, res, next) {
     if (typeof isEnabled === "boolean") store.integrations.pixgo.isEnabled = isEnabled;
     if (baseUrl !== undefined) store.integrations.pixgo.baseUrl = String(baseUrl || "https://pixgo.org/api/v1").trim();
 
+    // ✅ nunca devolve chave, só aceita nova se vier preenchida
     if (apiKey !== undefined) {
       const key = String(apiKey || "").trim();
       if (key.length < 20) throw new ApiError(400, "INVALID_API_KEY", "apiKey looks invalid");

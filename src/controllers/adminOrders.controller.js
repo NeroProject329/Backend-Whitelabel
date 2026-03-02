@@ -1,6 +1,7 @@
 // src/controllers/adminOrders.controller.js
 const mongoose = require("mongoose");
 const Order = require("../models/Order");
+const Payment = require("../models/Payment");
 const { ApiError } = require("../middlewares/error");
 
 function isValidObjectId(v) {
@@ -22,16 +23,39 @@ async function listOrdersByStore(req, res, next) {
       .limit(200)
       .lean();
 
+    // ✅ opcional e útil no painel: trazer payment status (sem peso absurdo)
+    const orderIds = orders.map((o) => String(o._id));
+    const payments = await Payment.find({ orderId: { $in: orderIds } })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const paymentByOrderId = new Map();
+    for (const p of payments) {
+      const oid = String(p.orderId);
+      if (!paymentByOrderId.has(oid)) paymentByOrderId.set(oid, p); // primeiro é o mais recente
+    }
+
     return res.json({
       success: true,
-      data: orders.map((o) => ({
-        id: String(o._id),
-        storeId: String(o.storeId),
-        status: o.status,
-        totals: o.totals,
-        customer: o.customer || { name: "", phone: "" },
-        createdAt: o.createdAt
-      }))
+      data: orders.map((o) => {
+        const pay = paymentByOrderId.get(String(o._id));
+        return {
+          id: String(o._id),
+          storeId: String(o.storeId),
+          status: o.status,
+          totals: o.totals,
+          customer: o.customer || { name: "", phone: "" },
+          createdAt: o.createdAt,
+          payment: pay
+            ? {
+                provider: pay.provider,
+                status: pay.status,
+                amountCents: pay.amountCents,
+                expiresAt: pay.expiresAt || null
+              }
+            : null
+        };
+      })
     });
   } catch (err) {
     next(err);
@@ -52,6 +76,9 @@ async function getOrderAdmin(req, res, next) {
       if (!allowed) throw new ApiError(403, "FORBIDDEN", "No access to this order");
     }
 
+    // ✅ payment mais recente do pedido
+    const pay = await Payment.findOne({ orderId: String(order._id) }).sort({ createdAt: -1 }).lean();
+
     return res.json({
       success: true,
       data: {
@@ -69,6 +96,18 @@ async function getOrderAdmin(req, res, next) {
           notes: it.notes || ""
         })),
         totals: order.totals,
+        payment: pay
+          ? {
+              id: String(pay._id),
+              provider: pay.provider,
+              status: pay.status,
+              amountCents: pay.amountCents,
+              qrCode: pay.qrCode || "",
+              qrImageUrl: pay.qrImageUrl || "",
+              expiresAt: pay.expiresAt || null,
+              createdAt: pay.createdAt
+            }
+          : null,
         createdAt: order.createdAt,
         updatedAt: order.updatedAt
       }
@@ -77,7 +116,6 @@ async function getOrderAdmin(req, res, next) {
     next(err);
   }
 }
-
 
 async function updateOrderStatus(req, res, next) {
   try {
