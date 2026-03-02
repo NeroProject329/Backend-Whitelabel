@@ -20,6 +20,14 @@ const StoreSchema = new mongoose.Schema(
         return Array.from(new Set(sanitized));
       }
     },
+        integrations: {
+        pixgo: {
+        isEnabled: { type: Boolean, default: false },
+        baseUrl: { type: String, default: "https://pixgo.org/api/v1" },
+        apiKeyEnc: { type: String, default: "" },
+        apiKeyUpdatedAt: { type: Date, default: null }
+      }
+    },
 
     // Config pública da loja
     logoUrl: { type: String, default: "" },

@@ -3,6 +3,7 @@ const express = require("express");
 const { createDraft, getOrder, advanceCheckout } = require("../controllers/publicOrders.controller");
 const { resolveStore } = require("../middlewares/resolveStore");
 
+
 const router = express.Router();
 
 // Mesma lógica do catálogo: se não veio storeId, resolve por domínio/host
@@ -14,5 +15,6 @@ function resolveStoreIfNeeded(req, res, next) {
 router.post("/orders", resolveStoreIfNeeded, createDraft);
 router.get("/orders/:id", getOrder);
 router.post("/orders/:id/advance", resolveStoreIfNeeded, advanceCheckout);
+router.get("/orders/:id/payment", getOrderPayment);
 
 module.exports = router;

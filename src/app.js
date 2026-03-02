@@ -17,6 +17,8 @@ const adminUploadRoutes = require("./routes/admin.upload.routes");
 const authBootstrapRoutes = require("./routes/auth.bootstrap.routes");
 const publicOrdersRoutes = require("./routes/public.orders.routes");
 const adminOrdersRoutes = require("./routes/admin.orders.routes");
+const adminIntegrationsRoutes = require("./routes/admin.integrations.routes");
+const pixgoWebhookRoutes = require("./routes/webhooks.pixgo.routes");
 
 
 function createApp() {
@@ -59,22 +61,26 @@ function createApp() {
   // app.use("/webhooks", ...)
 
   // 404 + handler
+
+  // Público
   app.use("/public/store", publicStoreRoutes);
   app.use("/public", publicCatalogRoutes);
+  app.use("/public", publicOrdersRoutes);
 
   app.use("/auth", authRoutes);
   app.use("/auth", authRoutes);
   app.use("/auth", authBootstrapRoutes);
 
+  // Admin
   app.use("/admin", adminStoreRoutes);
   app.use("/admin", adminCatalogRoutes);
   app.use("/admin", adminUploadRoutes);
+  app.use("/admin", adminOrdersRoutes);
+  app.use("/admin", adminIntegrationsRoutes);
+
+  app.use("/webhooks", pixgoWebhookRoutes);
 
 
-// Público
-app.use("/public", publicOrdersRoutes);
-// Admin
-app.use("/admin", adminOrdersRoutes);
 
   app.use(notFound);
   app.use(errorHandler);

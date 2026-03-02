@@ -78,4 +78,32 @@ async function getOrderAdmin(req, res, next) {
   }
 }
 
-module.exports = { listOrdersByStore, getOrderAdmin };
+
+async function updateOrderStatus(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { status } = req.body || {};
+
+    if (!isValidObjectId(id)) throw new ApiError(400, "INVALID_ORDER_ID", "Invalid order id");
+
+    const allowed = ["CONFIRMED", "PREPARING", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELED"];
+    if (!allowed.includes(String(status))) throw new ApiError(400, "INVALID_STATUS", "Invalid status");
+
+    const order = await Order.findById(id);
+    if (!order) throw new ApiError(404, "ORDER_NOT_FOUND", "Order not found");
+
+    if (req.user.role !== "SUPER_ADMIN") {
+      const ok = (req.user.storeIds || []).map(String).includes(String(order.storeId));
+      if (!ok) throw new ApiError(403, "FORBIDDEN", "No access to this order");
+    }
+
+    order.status = String(status);
+    await order.save();
+
+    return res.json({ success: true, data: { id: String(order._id), status: order.status } });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { listOrdersByStore, getOrderAdmin, updateOrderStatus };

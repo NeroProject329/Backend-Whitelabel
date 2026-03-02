@@ -28,6 +28,11 @@ const env = {
   SMS_API_URL: process.env.SMS_API_URL || "",
   SMS_API_TOKEN: process.env.SMS_API_TOKEN || "",
   SMS_CAMPAIGN_NAME: process.env.SMS_CAMPAIGN_NAME || "Campanha Checkout",
+
+  PUBLIC_BASE_URL: process.env.PUBLIC_BASE_URL || "",
+  PIXGO_WEBHOOK_TOKEN: process.env.PIXGO_WEBHOOK_TOKEN || "",
+  DATA_ENCRYPTION_KEY: process.env.DATA_ENCRYPTION_KEY || "",
+  AUTO_CONFIRM_AFTER_PAYMENT: ["true", "1", "yes"].includes(String(process.env.AUTO_CONFIRM_AFTER_PAYMENT || "true").toLowerCase()),
   
 };
 

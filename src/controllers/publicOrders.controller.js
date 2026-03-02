@@ -8,6 +8,10 @@ const { computeOrderTotals } = require("../services/orderTotals.service");
 const Customer = require("../models/Customer");
 const SmsLog = require("../models/SmsLog");
 const { sendCheckoutSms, normalizePhoneBR } = require("../services/sms.service");
+const Payment = require("../models/Payment");
+const { decryptSecret } = require("../utils/crypto");
+const { createPixgoPayment, mapPixgoStatusToPaymentStatus } = require("../services/pixgo.service");
+const { env } = require("../config/env");
 
 function isValidObjectId(v) {
   return mongoose.Types.ObjectId.isValid(v);
@@ -211,6 +215,61 @@ async function advanceCheckout(req, res, next) {
 
     await order.save();
 
+     // ---------- PIXGO (se configurado) ----------
+    let pix = null;
+
+    const pixgoCfg = store.integrations?.pixgo || {};
+    if (pixgoCfg.isEnabled && pixgoCfg.apiKeyEnc) {
+      const apiKey = decryptSecret(pixgoCfg.apiKeyEnc);
+      const baseUrl = pixgoCfg.baseUrl || "https://pixgo.org/api/v1";
+
+      // monta endereço em string (doc aceita string) :contentReference[oaicite:8]{index=8}
+      const addressStr = `${order.address.street}, ${order.address.number}, ${order.address.district}, ${order.address.city}, ${order.address.uf}, ${order.address.zip}` +
+        (order.address.complement ? `, ${order.address.complement}` : "");
+
+      const webhookUrl = env.PUBLIC_BASE_URL
+        ? `${String(env.PUBLIC_BASE_URL).replace(/\/$/, "")}/webhooks/pixgo${env.PIXGO_WEBHOOK_TOKEN ? `?token=${encodeURIComponent(env.PIXGO_WEBHOOK_TOKEN)}` : ""}`
+        : undefined;
+
+      const createResp = await createPixgoPayment({
+        baseUrl,
+        apiKey,
+        amountCents: order.totals.totalCents,
+        externalId: String(order._id), // external_id max 50 :contentReference[oaicite:9]{index=9}
+        description: `Pedido ${String(order._id)}`,
+        customer: { name: order.customer.name, phone: order.customer.phone, doc: order.customer.doc || "" },
+        customerAddress: addressStr,
+        webhookUrl
+      });
+
+      // doc: retorna payment_id, qr_code, qr_image_url, expires_at :contentReference[oaicite:10]{index=10}
+      const d = createResp?.data || {};
+      const paymentStatus = mapPixgoStatusToPaymentStatus(d.status);
+
+      const payment = await Payment.create({
+        storeId: store._id,
+        orderId: order._id,
+        provider: "PIXGO",
+        status: paymentStatus,
+        externalId: String(order._id),
+        providerPaymentId: d.payment_id || "",
+        amountCents: order.totals.totalCents,
+        qrCode: d.qr_code || "",
+        qrImageUrl: d.qr_image_url || "",
+        expiresAt: d.expires_at ? new Date(d.expires_at) : null,
+        payload: createResp
+      });
+
+      pix = {
+        paymentId: String(payment._id),
+        providerPaymentId: payment.providerPaymentId,
+        status: payment.status,
+        qrCode: payment.qrCode,
+        qrImageUrl: payment.qrImageUrl,
+        expiresAt: payment.expiresAt
+      };
+    }
+
     // ---------- dispara SMS (não quebra se falhar) ----------
     const smsResult = await sendCheckoutSms({
       storeName: store.name,
@@ -236,10 +295,8 @@ async function advanceCheckout(req, res, next) {
         orderId: String(order._id),
         status: order.status,
         totals: order.totals,
-        sms: {
-          sent: !!smsResult.ok,
-          error: smsResult.ok ? null : smsResult.error
-        }
+        sms: { sent: !!smsResult.ok,   error: smsResult.ok ? null : smsResult.error},
+        pix
       }
     });
   } catch (err) {
@@ -247,4 +304,30 @@ async function advanceCheckout(req, res, next) {
   }
 }
 
-module.exports = { createDraft, getOrder, advanceCheckout };
+async function getOrderPayment(req, res, next) {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) throw new ApiError(400, "INVALID_ORDER_ID", "Invalid order id");
+
+    const payment = await Payment.findOne({ orderId: id, provider: "PIXGO" }).sort({ createdAt: -1 }).lean();
+    if (!payment) {
+      return res.json({ success: true, data: { hasPayment: false } });
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        hasPayment: true,
+        status: payment.status,
+        qrCode: payment.qrCode || "",
+        qrImageUrl: payment.qrImageUrl || "",
+        expiresAt: payment.expiresAt || null,
+        providerPaymentId: payment.providerPaymentId || ""
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { createDraft, getOrder, advanceCheckout, getOrderPayment };
